@@ -33,7 +33,8 @@ class Temp{
     }
 
     public function getString(){
-        return "type:{$this->type} val:{$this->val}";
+        test string;
+        lalala
     }
 
 
