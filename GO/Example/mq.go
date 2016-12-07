@@ -25,24 +25,43 @@ const (
 )
 
 func main() {
+	if len(os.Args) <= 1 {
+		fmt.Println("please input args:[push,receive,count]")
+		return
+	}
+	fname := os.Args[1]
 	fmt.Println("======begin queue test======")
-	//publish()
-	//receive()
-	//time.Sleep(10 * time.Second)
-	getQueueMessageCount()
-	close()
+
+	switch fname {
+	case "push":
+		publish()
+		//time.Sleep(100 * time.Second)
+		break
+	case "receive":
+		receive()
+		break
+	case "count":
+		getQueueMessageCount()
+		break
+	default:
+		fmt.Println("invalid main args")
+		break
+	}
+	//close()
 	fmt.Println("======end queue test======")
 }
 
 func publish() {
+	forever := make(chan bool)
 	go func() {
-		count := 1
+		i := 1
 		for {
-			push(count)
+			push(i)
 			//time.Sleep(1 * time.Second)
-			count++
+			i++
 		}
 	}()
+	<-forever
 }
 
 // 连接rabbitmq server
@@ -55,7 +74,7 @@ func mqConnect() {
 }
 
 // 生产消息
-func push(count int) {
+func push(i int) {
 	if channel == nil {
 		mqConnect()
 	}
@@ -72,7 +91,7 @@ func push(count int) {
 	)
 	failOnErr(err, "Failed to declare an exchange")
 
-	msgContent := "hello world!-" + strconv.Itoa(count)
+	msgContent := "Rabbit MQ!-" + strconv.Itoa(i)
 
 	// 发布
 	channel.Publish(exchange, routingKey, false, false, amqp.Publishing{
@@ -119,7 +138,9 @@ func receive() {
 			d.Ack(false) // ack
 		}
 	}()
+
 	fmt.Printf(" [*] Waiting for messages. To exit press CTRL+C\n")
+
 	<-forever
 }
 
