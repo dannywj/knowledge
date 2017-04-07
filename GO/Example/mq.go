@@ -95,8 +95,9 @@ func push(i int) {
 
 	// 发布
 	channel.Publish(exchange, routingKey, false, false, amqp.Publishing{
-		ContentType: "text/plain",
-		Body:        []byte(msgContent),
+		DeliveryMode: amqp.Persistent, // 发布消息持久化
+		ContentType:  "text/plain",
+		Body:         []byte(msgContent),
 	})
 	printMessage("push message -> [" + msgContent + "] ok")
 }
