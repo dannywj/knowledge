@@ -50,6 +50,7 @@ func main() {
 		// 解析成功，打印对象信息
 		fmt.Println("Unmarshal success")
 		stb.ShowStu()
+		fmt.Printf("%#v\n", stb)
 	}
 
 	println("======end======")
