@@ -79,3 +79,14 @@ func main() {
 	m.sayHello()
 	println("======end======")
 }
+
+/*
+======begin======
+student:xiaoming (no:001) can do homework
+teacher:Jack (level:normal) can teaching
+student eat:xiaoming (no:001) ******
+teacher eat:Jack (level:normal) ######
+person:Jack say hello
+person:xiaoming say hello
+======end======
+*/
