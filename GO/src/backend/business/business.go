@@ -9,6 +9,7 @@ import (
 	"backend/tool"
 	"bufio"
 	"fmt"
+	"github.com/go-redis/redis"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"os"
@@ -21,7 +22,7 @@ import (
 // 静态常量
 const (
 	// 日志名称
-	LOG_NAME = "device"
+	LOG_NAME = "energy"
 	// Mongo 连接配置串
 	// MONGO_URL_PLANTING = "10.21.6.39:27111" //test
 	// MONGO_URL_USER     = "10.21.6.39:27111" //test
@@ -30,12 +31,19 @@ const (
 	MONGO_URL_USER     = "10.21.6.36:10010" //online
 
 	// 开启协程数
-	NUMBER_GOROUTINES = 50
+	NUMBER_GOROUTINES = 30
 	// 通道缓冲数
-	CHAN_TASK_BUFFER = 20000
+	CHAN_TASK_BUFFER = 50000
 	// 用户id文件路径
-	USER_ID_FILE_NAME = "test.txt"
+	USER_ID_FILE_NAME = "alluser_20180712.log"
 )
+
+// redis-test
+// var RedisServerList = []string{"10.21.6.36:6666", "10.21.6.37:6666", "10.21.6.38:6666", "10.21.6.39:6666", "10.21.6.40:6666", "10.21.6.41:6666"}
+// var RedisPassword="ifeng666"
+// redis-cluster2
+var RedisServerList = []string{"10.80.17.178:6379", "10.80.18.178:6379", "10.80.19.178:6379", "10.80.20.178:6379", "10.80.21.178:6379", "10.80.22.178:6379", "10.80.23.178:6379", "10.80.24.178:6379"}
+var RedisPassword = "tv3nIQJgjaSd-"
 
 // 方法路由
 var funcs = map[string]interface{}{
@@ -44,6 +52,12 @@ var funcs = map[string]interface{}{
 
 	"get_device_from_file":        getAllUserFromFileToChan,
 	"get_device_from_file_worker": deviceInfoWorker,
+
+	"check_user_energy":        getAllUserFromFileToChan,
+	"check_user_energy_worker": userEnergyWorker,
+
+	"gen_user_list_file":        getAllUserToChan,
+	"gen_user_list_file_worker": genUserListWorker,
 }
 
 // 用户结构体
@@ -62,6 +76,9 @@ type UserDevice struct {
 // mongo连接
 var GlobalMgoSessionPlanting *mgo.Session
 var GlobalMgoSessionUser *mgo.Session
+
+// redis连接
+var RedisClient *redis.ClusterClient
 
 // wg 用来等待程序完成
 var wg sync.WaitGroup
@@ -112,16 +129,14 @@ func getAllUserToChan(taskChan chan interface{}) {
 	defer session.Close()               //释放
 
 	collection := session.DB("planting").C("user")
-	//iter := collection.Find(nil).Iter()
-	iter := collection.Find(nil).Limit(10000).Iter()
+	iter := collection.Find(nil).Iter()
+	//iter := collection.Find(nil).Limit(20000).Iter()
 	result := User{}
 	i := 1
 	for iter.Next(&result) {
-		fmt.Printf("guid: %v \n", result.Guid)
-
-		fmt.Printf("================= DB queue->%v =================\n", i)
+		fmt.Printf("================= DB queue->%v =======guid: %v==========\n", i, result.Guid)
 		i++
-		taskChan <- result.Guid
+		taskChan <- result
 	}
 }
 
@@ -138,10 +153,12 @@ func getAllUserFromFileToChan(taskChan chan interface{}) {
 		}
 		guid, _ := strconv.Atoi(str)
 		fmt.Printf("guid: %v \n", guid)
-
+		// 构造user对象
+		userObj := User{}
+		userObj.Guid = guid
 		fmt.Printf("================= file queue->%v =================\n", i)
 		i++
-		taskChan <- guid
+		taskChan <- userObj
 
 	}
 }
@@ -156,7 +173,7 @@ func deviceInfoWorker(taskChan chan interface{}, workerID int) {
 	for {
 		//使用两个变量接受返回值，如果ok为false，则taskChan为零值，但是不会报错。
 		//用于检测通道是否关闭或为空
-		guid, ok := <-taskChan
+		data, ok := <-taskChan
 		if !ok {
 			//通道为空
 			fmt.Printf("worker-%d 所有任务完成\n", workerID)
@@ -164,9 +181,10 @@ func deviceInfoWorker(taskChan chan interface{}, workerID int) {
 			return
 		}
 		// 获取设备信息
-		deviceId := getDeviceInfoByGuid(guid.(int))
-		fmt.Printf("worker-%d 处理任务：[%v]-{%v}\n", workerID, guid, deviceId)
-		tool.WriteLog(LOG_NAME, fmt.Sprintf("%v-%v", guid, deviceId), false)
+		userObj := data.(User)
+		deviceId := getDeviceInfoByGuid(userObj.Guid)
+		fmt.Printf("worker-%d 处理任务：[%v]-{%v}\n", workerID, userObj.Guid, deviceId)
+		tool.WriteLog(LOG_NAME, fmt.Sprintf("%v-%v", userObj.Guid, deviceId), false)
 		// 计数,2000条暂停1s
 		i++
 		if i%2000 == 0 {
@@ -208,8 +226,22 @@ func getDeviceInfoByGuid(guid int) string {
 	return result.DeviceId
 }
 
+// 获取用户信息
+func getUserInfoByGuid(guid int) int {
+	collection := GlobalMgoSessionPlanting.DB("planting").C("user")
+	result := User{}
+	collection.Find(bson.M{"guid": guid}).One(&result)
+	return result.Energy
+}
+
 // 初始化,系统默认执行
 func init() {
+	initMongo()
+	initRedis()
+}
+
+// 初始化mongodb
+func initMongo() {
 	// 初始化Planting Session
 	globalMgoSessionPlanting, err := mgo.DialWithTimeout(MONGO_URL_PLANTING, 10*time.Second)
 	if err != nil {
@@ -227,8 +259,90 @@ func init() {
 	GlobalMgoSessionUser.SetMode(mgo.Monotonic, true)
 }
 
+// 初始化redis
+func initRedis() {
+	RedisClient = redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs:    RedisServerList,
+		Password: RedisPassword,
+	})
+}
+
 // 打印&写日志
 func PrintLog(str string) {
 	fmt.Println(str)
 	tool.WriteLog(LOG_NAME, str, false)
+}
+
+// 获取用户能量(from redis)
+func getUserEnergyFromRedis(guid int) int {
+	key := fmt.Sprintf("planting:user:info:%v", guid)
+	val, err := RedisClient.HGetAll(key).Result()
+	if err != nil {
+		panic(err)
+	}
+	if len(val) > 0 {
+		energy_score, _ := strconv.Atoi(val["energy_score"])
+		return energy_score
+	}
+	return 0
+}
+
+// 能量比较worker
+func userEnergyWorker(taskChan chan interface{}, workerID int) {
+	// 通知函数已经返回
+	defer wg.Done()
+	// 计数器
+	i := 1
+	// 循环接收工作
+	for {
+		//使用两个变量接受返回值，如果ok为false，则taskChan为零值，但是不会报错。
+		//用于检测通道是否关闭或为空
+		data, ok := <-taskChan
+		if !ok {
+			//通道为空
+			fmt.Printf("worker-%d 所有任务完成\n", workerID)
+			return
+		}
+		// 获取设备信息
+		userObj := data.(User)
+		energyRedis := getUserEnergyFromRedis(userObj.Guid)
+		energyMongo := getUserInfoByGuid(userObj.Guid)
+		fmt.Printf("worker-%d 处理任务：[%v]-{redis:%v  mongo:%v}\n", workerID, userObj.Guid, energyRedis, energyMongo)
+		if tool.CalcIntAbs(energyRedis-energyMongo) != 0 {
+			tool.WriteLog(LOG_NAME, fmt.Sprintf("%v:%v-%v", userObj.Guid, energyRedis, energyMongo), false)
+		}
+
+		// 计数,2000条暂停1s
+		i++
+		if i%2000 == 0 {
+			time.Sleep(time.Millisecond * 1000)
+		}
+	}
+}
+
+// 生成用户列表文件worker
+func genUserListWorker(taskChan chan interface{}, workerID int) {
+	// 通知函数已经返回
+	defer wg.Done()
+	// 计数器
+	i := 1
+	// 循环接收工作
+	for {
+		//使用两个变量接受返回值，如果ok为false，则taskChan为零值，但是不会报错。
+		//用于检测通道是否关闭或为空
+		data, ok := <-taskChan
+		if !ok {
+			//通道为空
+			fmt.Printf("worker-%d 所有任务完成\n", workerID)
+			GlobalMgoSessionPlanting.Close()
+			return
+		}
+		userObj := data.(User)
+		tool.WriteLog(LOG_NAME, fmt.Sprintf("%v", userObj.Guid), false)
+		// 计数,2000条暂停1s
+		i++
+		if i%2000 == 0 {
+			time.Sleep(time.Millisecond * 1000)
+		}
+	}
 }

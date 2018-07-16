@@ -19,3 +19,9 @@ func Call(m map[string]interface{}, name string, params ...interface{}) (result 
 	result = f.Call(in)
 	return
 }
+
+// 计算整型绝对值
+func CalcIntAbs(a int) (ret int) {
+	ret = (a ^ a>>31) - a>>31
+	return
+}
