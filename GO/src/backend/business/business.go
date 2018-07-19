@@ -83,9 +83,16 @@ var RedisClient *redis.ClusterClient
 // wg 用来等待程序完成
 var wg sync.WaitGroup
 
+// 执行限速器
+var lr tool.LimitRate
+
 // 脚本主入口,根据任务名称执行不同任务
 func Run(taskName string) {
-	t1 := time.Now()
+	// 计时器
+	beginTime := time.Now()
+
+	// 每秒限速配置
+	lr.SetRate(-1) // 每秒执行任务数配置, -1 不限速
 
 	// 分配n个逻辑处理器给调度器使用
 	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
@@ -119,8 +126,7 @@ func Run(taskName string) {
 	wg.Wait()
 
 	// 计算时间
-	elapsed := time.Since(t1)
-	PrintLog(fmt.Sprintf("total time:%v", elapsed))
+	PrintLog(fmt.Sprintf("total time:%v", time.Since(beginTime)))
 }
 
 // 获取种树用户列表to管道
@@ -167,8 +173,6 @@ func getAllUserFromFileToChan(taskChan chan interface{}) {
 func deviceInfoWorker(taskChan chan interface{}, workerID int) {
 	// 通知函数已经返回
 	defer wg.Done()
-	// 计数器
-	i := 1
 	// 循环接收工作
 	for {
 		//使用两个变量接受返回值，如果ok为false，则taskChan为零值，但是不会报错。
@@ -180,15 +184,14 @@ func deviceInfoWorker(taskChan chan interface{}, workerID int) {
 			GlobalMgoSessionPlanting.Close()
 			return
 		}
-		// 获取设备信息
-		userObj := data.(User)
-		deviceId := getDeviceInfoByGuid(userObj.Guid)
-		fmt.Printf("worker-%d 处理任务：[%v]-{%v}\n", workerID, userObj.Guid, deviceId)
-		tool.WriteLog(LOG_NAME, fmt.Sprintf("%v-%v", userObj.Guid, deviceId), false)
-		// 计数,2000条暂停1s
-		i++
-		if i%2000 == 0 {
-			time.Sleep(time.Millisecond * 1000)
+		// 限速执行
+		if lr.Limit() {
+			// 获取设备信息
+			userObj := data.(User)
+			deviceId := getDeviceInfoByGuid(userObj.Guid)
+			fmt.Printf("worker-%d 处理任务：[%v]-{%v}\n", workerID, userObj.Guid, deviceId)
+			fmt.Printf("=======================↓↓↓↓↓↓↓[%v]↓↓↓↓↓↓↓=======================\n", len(taskChan)) //该长度值的计算在并发执行过程中不准确,会有重叠的现象发生,只能作为大概的参考
+			tool.WriteLog(LOG_NAME, fmt.Sprintf("%v-%v", userObj.Guid, deviceId), false)
 		}
 	}
 }
@@ -308,6 +311,7 @@ func userEnergyWorker(taskChan chan interface{}, workerID int) {
 		energyRedis := getUserEnergyFromRedis(userObj.Guid)
 		energyMongo := getUserInfoByGuid(userObj.Guid)
 		fmt.Printf("worker-%d 处理任务：[%v]-{redis:%v  mongo:%v}\n", workerID, userObj.Guid, energyRedis, energyMongo)
+		fmt.Printf("=======================↓↓↓↓↓↓↓[%v]↓↓↓↓↓↓↓=======================\n", len(taskChan))
 		if tool.CalcIntAbs(energyRedis-energyMongo) != 0 {
 			tool.WriteLog(LOG_NAME, fmt.Sprintf("%v:%v-%v", userObj.Guid, energyRedis, energyMongo), false)
 		}
