@@ -1,6 +1,8 @@
 //{{define "jsCommon"}}
 //<script type="text/javascript">
 // Tools
+var g_controller_base = 'http://localhost:8088/';
+
 String.prototype.ReplaceAll = function (f, e) {//吧f替换成e
     var reg = new RegExp(f, "g"); //创建正则RegExp对象   
     return this.replace(reg, e);
@@ -88,6 +90,81 @@ function isJson(str) {
 function scrollToEnd() {
     var h = $(document).height() - $(window).height();
     $(document).scrollTop(h);
+}
+
+function ajaxGetJson(url, params, callback, error_callback, page_loading) {
+    if (page_loading) {
+        loadingPage();
+    }
+    $.getJSON(g_controller_base+url, params, function (data) {
+        if (page_loading) {
+            loadingPage(true);
+        }
+        if (data.code === 0) {
+            callback(data.data);
+        } else {
+            if (error_callback) {
+                error_callback(data);
+            } else {
+                console.error(data);
+                switch (data.status) {
+                    case 201:
+                        alert("Invalid user identity，please login");
+                        window.location = 'login.html';
+                        break;
+                    case 203:
+                        alert("Invalid permission");
+                        break;
+                    default:
+                        alert("get api[{0}] error!".format(s + ' ' + f));
+                }
+            }
+        }
+    });
+}
+
+function ajaxPostJson(s, f, params, callback, error_callback, page_loading) {
+    if (page_loading) {
+        loadingPage();
+    }
+    $.post(g_controller_base + "?s={0}&f={1}".format(s, f), params, function (data) {
+        if (page_loading) {
+            loadingPage(true);
+        }
+        if (data.status === 0) {
+            callback(data.data);
+        } else {
+            if (error_callback) {
+                error_callback(data);
+            } else {
+                console.error(data);
+                switch (data.status) {
+                    case 201:
+                        alert("Invalid user identity，please login");
+                        window.location = 'login.html';
+                        break;
+                    case 203:
+                        alert("Invalid permission");
+                        break;
+                    default:
+                        alert("post api[{0}] error!".format(s + ' ' + f));
+                }
+            }
+        }
+    });
+}
+
+function loadingDiv(divSelecter) {
+    $(divSelecter).html("<img src='images/loading.gif' style='margin: 0 auto;display: block;'/>");
+}
+
+function loadingPage(is_hide) {
+    var loading_html = '<section class="loading_shade" id="J_loading_box"> <div class="loading_box"> <div class="loading"></div> <p class="loading_text">Loading...</p> </div> </section>';
+    if (is_hide) {
+        $(".loading_shade").hide();
+    } else {
+        $("body").append(loading_html);
+    }
 }
 
 //</script>

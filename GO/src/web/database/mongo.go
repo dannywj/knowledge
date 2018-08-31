@@ -9,10 +9,10 @@ const (
 	// 日志名称
 	//LOG_NAME = "energy"
 	// Mongo 连接配置串
-	MONGO_URL_PLANTING = "10.21.6.39:27111" //test
+	//MONGO_URL_PLANTING = "10.21.6.39:27111" //test
 	// MONGO_URL_USER     = "10.21.6.39:27111" //test
 
-	//MONGO_URL_PLANTING = "10.21.6.36:10011" //online
+	MONGO_URL_PLANTING = "10.21.6.36:10011" //online
 )
 
 var GlobalMgoSessionPlanting *mgo.Session

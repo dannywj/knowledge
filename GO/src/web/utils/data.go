@@ -4,6 +4,7 @@ import (
 	"sort"
 )
 
+// SliceUnique 数组去重
 func SliceUnique(a []string) (ret []string) {
 	sort.Strings(a)
 	a_len := len(a)

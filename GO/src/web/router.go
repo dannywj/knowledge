@@ -20,6 +20,8 @@ func initRouter() *gin.Engine {
 	router.GET("/user/:guid", GetUserAction)
 	router.GET("/action/count/", GetActionCountAction)
 	router.GET("/action/statistics/", GetActionStatisticsPage)
+	router.GET("/redbag/statistics/", GetRedbagStatisticsPage)
+	router.GET("/redbag/info/", GetRedbagInfoAction)
 
 	return router
 }
