@@ -33,7 +33,7 @@ func GetUserInfoByGuid(guid int) int {
 
 // GetActionCountByDate 根据日期统计行为日志数
 func GetActionCountByDate(ymdDate int) (int, int) {
-	collection := db.GlobalMgoSessionPlanting.DB("planting").C("user_action201807")
+	collection := db.GlobalMgoSessionPlanting.DB("planting").C("user_action201809")
 	iter := collection.Find(bson.M{"ymd_date": ymdDate}).Limit(50).Iter()
 	result := UserAction{}
 	var list []string
@@ -122,7 +122,7 @@ func actionWorker(taskChan chan string, workerId int, resultChan chan string) {
 		fmt.Printf("worker-%d 开始处理任务：[%s]\n", workerId, task)
 
 		// 处理任务
-		collection := db.GlobalMgoSessionPlanting.DB("planting").C("user_action201808")
+		collection := db.GlobalMgoSessionPlanting.DB("planting").C("user_action201809")
 
 		countNum, _ := collection.Count()
 		fmt.Println(countNum)
@@ -142,7 +142,7 @@ func actionWorker(taskChan chan string, workerId int, resultChan chan string) {
 		uniqueCount := len(ret)
 
 		// 数据结果push到结果通道
-		resultChan <- fmt.Sprintf("%v_%v_%v", task, total, uniqueCount)
+		resultChan <- fmt.Sprintf("%v_%v_%v", utils.DayAggrToTime(task), total, uniqueCount)
 		// 任务处理完成
 		fmt.Printf("worker-%d 完成任务：[%s]\n", workerId, task)
 

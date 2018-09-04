@@ -1,7 +1,8 @@
 package main
 
 // MongoDB连接并group by获取数据
-// 大数据量的表会出现性能问题,查询卡住
+// 大数据量的表会出现性能问题,查询卡住,原因是排序语句写在前被优先执行了
+// 实际放在最后即可解决
 import (
 	"fmt"
 	"labix.org/v2/mgo"
@@ -10,18 +11,18 @@ import (
 )
 
 const (
-	//URL = "10.21.6.36:10011"
+	//URL = "10.21.6.36:10011" //online
 	URL        = "10.21.6.39:27111"
 	f_datetime = "2006-01-02 15:04:05"
 )
 
-type Test struct {
+type Money struct {
 	Id    string `bson:"_id"`
 	Total uint   `bson:"total"`
 }
 
 var (
-	ress = []*Test{}
+	ress = []*Money{}
 )
 
 func main() {
@@ -49,14 +50,9 @@ func main() {
 			"$match": bson.M{
 				"ctime": bson.M{
 					"$gt": StrToTime("2018-07-17 00:00:00"),
-					"$lt": StrToTime("2018-07-20 00:00:00"),
+					"$lt": StrToTime("2018-07-30 00:00:00"),
 				},
 				"channel": "TREE_PLANTING_REWARD",
-			},
-		},
-		bson.M{
-			"$sort": bson.M{
-				"_id": 1,
 			},
 		},
 		bson.M{
@@ -69,6 +65,11 @@ func main() {
 			"$project": bson.M{
 				"_id":   1,
 				"total": "$total",
+			},
+		},
+		bson.M{
+			"$sort": bson.M{
+				"_id": 1,
 			},
 		},
 	}

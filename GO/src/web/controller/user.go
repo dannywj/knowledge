@@ -91,20 +91,19 @@ func GetRedbagInfoAction(c *gin.Context) {
 	beginDate, _ := strconv.Atoi(c.Query("begin_date"))
 	endDate, _ := strconv.Atoi(c.Query("end_date"))
 
-	if endDate-beginDate > 10 {
-		Error(c, 101, "只能查询10天以内的数据")
-		return
-	}
+	// if endDate-beginDate > 10 {
+	// 	Error(c, 101, "只能查询10天以内的数据")
+	// 	return
+	// }
 	result := make(map[string]interface{})
 
-	resultList := model.GetMoneyByDate(beginDate, endDate)
+	resultList := model.GetJournalGroupByDate(beginDate, endDate)
 
 	for _, value := range resultList {
 		listItemArr := strings.Split(value, "_")
 		fmt.Printf("date:%v fee:%v\n", listItemArr[0], listItemArr[1])
 		result[listItemArr[0]] = gin.H{
-			"total":       listItemArr[1],
-			"uniqueCount": 0,
+			"total": listItemArr[1],
 		}
 	}
 	Success(c, result)

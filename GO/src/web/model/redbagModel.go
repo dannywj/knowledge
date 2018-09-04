@@ -1,5 +1,6 @@
 package model
 
+// task 按天获取红包数据(未使用)
 // MongoDB连接并获取数据
 import (
 	"fmt"
