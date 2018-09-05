@@ -13,9 +13,18 @@ import (
 // IndexAction 默认接口
 func IndexAction(c *gin.Context) {
 	// c.String(http.StatusOK, "welcome planting!")
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
-		"title": "welcome planting!",
+	// c.HTML(http.StatusOK, "index.tmpl", gin.H{
+	// 	"title": "welcome planting!",
+	// })
+	_, err := template.ParseFiles("layout_index.html", "head.tpl",
+		"content_index.html", "common.js", "scripts_index.js")
+	if err != nil {
+		fmt.Println(err)
+	}
+	c.HTML(http.StatusOK, "layout_index.html", gin.H{
+		"title": "元宝树后台管理",
 	})
+
 }
 
 // GetUserAction 获取用户信息 by guid
@@ -69,7 +78,7 @@ func GetActionStatisticsPage(c *gin.Context) {
 		fmt.Println(err)
 	}
 	c.HTML(http.StatusOK, "layout_action.html", gin.H{
-		"title": "welcome action!",
+		"title": "元宝树后台管理",
 	})
 }
 
@@ -82,7 +91,7 @@ func GetRedbagStatisticsPage(c *gin.Context) {
 		fmt.Println(err)
 	}
 	c.HTML(http.StatusOK, "layout_redbag.html", gin.H{
-		"title": "welcome action!",
+		"title": "元宝树后台管理",
 	})
 }
 
@@ -107,4 +116,17 @@ func GetRedbagInfoAction(c *gin.Context) {
 		}
 	}
 	Success(c, result)
+}
+
+func GetBaseInfoAction(c *gin.Context) {
+
+	totalCount := model.GetUserTotalCount()
+	todayCount := model.GetUserCountToday()
+	todayGetRewardUserCount := model.GetTodayRewardUserCount()
+
+	Success(c, gin.H{
+		"total":                   totalCount,
+		"todayCount":              todayCount,
+		"todayGetRewardUserCount": todayGetRewardUserCount,
+	})
 }

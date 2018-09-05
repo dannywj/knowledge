@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	db "web/database"
 	"web/utils"
 )
@@ -165,4 +166,37 @@ func actionWorker(taskChan chan string, workerId int, resultChan chan string) {
 		// // 任务处理完成
 		// fmt.Printf("worker-%d 完成任务：[%s]\n", workerId, task)
 	}
+}
+
+func GetUserTotalCount() int {
+	collection := db.GlobalMgoSessionPlanting.DB("planting").C("user")
+	countNum, err := collection.Count()
+	if err != nil {
+		panic(err)
+	}
+	return countNum
+}
+
+func GetUserCountToday() int {
+	collection := db.GlobalMgoSessionPlanting.DB("planting").C("user")
+	t := time.Now()
+	ymd_date, _ := strconv.Atoi(utils.GetTmStr(t, "ymd"))
+	countNum, err := collection.Find(bson.M{"ymd_date": ymd_date}).Count()
+	fmt.Println("GetUserCountToday => ", countNum)
+	if err != nil {
+		panic(err)
+	}
+	return countNum
+}
+
+func GetTodayRewardUserCount() int {
+	collection := db.GlobalMgoSessionPlanting.DB("planting").C("reward_user_record_new")
+	t := time.Now()
+	ymd_date, _ := strconv.Atoi(utils.GetTmStr(t, "ymd"))
+	countNum, err := collection.Find(bson.M{"ymd_date": ymd_date}).Count()
+	fmt.Println("GetTodayRewardUserCount => ", countNum)
+	if err != nil {
+		panic(err)
+	}
+	return countNum
 }
