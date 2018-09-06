@@ -1,4 +1,4 @@
-{{ define "content_action" }}
+{{ define "content_ball" }}
 
 <body>
   <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -13,6 +13,16 @@
         </button>
         <a class="navbar-brand" href="/">元宝树后台管理</a>
       </div>
+      <!-- <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-right">
+          <li>
+            <a href="#">Dashboard</a>
+          </li>
+        </ul>
+        <form class="navbar-form navbar-right">
+          <input type="text" class="form-control" placeholder="Search...">
+        </form>
+      </div> -->
     </div>
   </nav>
 
@@ -25,7 +35,7 @@
               <span class="sr-only">(current)</span>
             </a>
           </li>
-          <li class="active">
+          <li>
             <a href="../../action/statistics/">行为日志统计</a>
           </li>
           <li>
@@ -34,7 +44,7 @@
           <li>
             <a href="../../withdraw/card/">提现卡补卡</a>
           </li>
-          <li>
+          <li class="active">
             <a href="../../ball/info/">能量球重置</a>
           </li>
         </ul>
@@ -42,43 +52,17 @@
 
 
       <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
         <div class="row" style="margin-left: 4px;">
-          <h3>操作日志时间段:</h3>
+          <h5 style="margin-left: 20px; margin-bottom: 20px;">对于个别用户能量球出现能量异常的情况,可进行重置操作!</h5>
+          <div class="col-lg-6">
+            <div class="input-group">
+              <input id="txt_guid" type="text" class="form-control" placeholder="用户guid">
+              <span class="input-group-btn">
+                <button id="btn_reset" class="btn btn-default" type="button">能量重置</button>
+              </span>
+            </div><!-- /input-group -->
+          </div><!-- /.col-lg-6 -->
 
-          <div class="row">
-            <div class="col-md-4">
-              <input type="date" class="form-control" id="txt_begin_date">
-            </div>
-            <div class="col-md-1" style="width: 4%">
-              <label>—</label>
-            </div>
-            <div class="col-md-4">
-              <input type="date" class="form-control" id="txt_end_date">
-            </div>
-            <div class="col-md-2">
-              <input id="btn_count" class="btn btn-success" type="button" value="开始统计">
-            </div>
-          </div>
-
-        </div>
-
-        <br/>
-        <br/>
-        <h4 class="sub-header">操作日志统计</h4>
-        <div class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>日志总条数</th>
-                <th>用户去重后总条数</th>
-              </tr>
-            </thead>
-            <tbody id="action_result">
-
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

@@ -16,15 +16,22 @@ func initRouter() *gin.Engine {
 	// 设置页面模板路径
 	router.LoadHTMLGlob("view/*")
 	// 绑定接口
-	router.GET("/", IndexAction)
 	router.GET("/user/:guid", GetUserAction)
+	// 基础信息
+	router.GET("/", IndexAction)
+	router.GET("/base/info/", GetBaseInfoAction)
+	// 行为统计
 	router.GET("/action/count/", GetActionCountAction)
 	router.GET("/action/statistics/", GetActionStatisticsPage)
+	// 红包统计
 	router.GET("/redbag/statistics/", GetRedbagStatisticsPage)
 	router.GET("/redbag/info/", GetRedbagInfoAction)
-	router.GET("/base/info/", GetBaseInfoAction)
+	// 提现卡补卡
 	router.GET("/withdraw/card/", GetWithdrawCardPage)
 	router.GET("/withdraw/cardAdd/", GetWithdrawCardAction)
+	// 能量球重置
+	router.GET("/ball/info/", GetBallInfoPage)
+	router.GET("/ball/reset/", ResetBallAction)
 	return router
 }
 
