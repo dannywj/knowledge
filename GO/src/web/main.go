@@ -7,9 +7,10 @@ import (
 func main() {
 	// 初始化mongo
 	database.InitMongo()
+	database.InitRedis()
 	// 初始化路由配置
 	router := initRouter()
-	router.Run(":8088")
+	router.Run(":9999")
 }
 
 /*

@@ -200,3 +200,14 @@ func GetTodayRewardUserCount() int {
 	}
 	return countNum
 }
+
+func SetUserWithdrawCard(guid string, money int) bool {
+	key := fmt.Sprintf("planting:reward:withdrawcard:%v:%v", guid, money)
+	err := db.GlobalRedisClient.Set(key, 1, 0).Err()
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println(key)
+	}
+	return true
+}

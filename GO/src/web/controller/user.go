@@ -130,3 +130,27 @@ func GetBaseInfoAction(c *gin.Context) {
 		"todayGetRewardUserCount": todayGetRewardUserCount,
 	})
 }
+
+//提现卡
+func GetWithdrawCardPage(c *gin.Context) {
+	//模板文件的拼接
+	_, err := template.ParseFiles("layout_withdraw.html", "head.tpl",
+		"content_withdraw.html", "common.js", "scripts_withdraw.js")
+	if err != nil {
+		fmt.Println(err)
+	}
+	c.HTML(http.StatusOK, "layout_withdraw.html", gin.H{
+		"title": "元宝树后台管理",
+	})
+}
+
+func GetWithdrawCardAction(c *gin.Context) {
+	guid := c.Query("guid")
+	money, _ := strconv.Atoi(c.Query("money"))
+
+	result := model.SetUserWithdrawCard(guid, money)
+
+	Success(c, gin.H{
+		"re": result,
+	})
+}
