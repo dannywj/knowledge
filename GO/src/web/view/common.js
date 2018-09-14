@@ -1,7 +1,7 @@
 //{{define "jsCommon"}}
 //<script type="text/javascript">
 // Tools
-var g_controller_base = 'http://localhost:9999/';
+var g_controller_base = 'http://10.21.6.102:9999/';
 
 String.prototype.ReplaceAll = function (f, e) {//吧f替换成e
     var reg = new RegExp(f, "g"); //创建正则RegExp对象   

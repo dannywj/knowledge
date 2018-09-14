@@ -15,5 +15,5 @@ func main() {
 
 /*
 运行: go run *.go
-入口地址:http://localhost:8088/redbag/statistics/
+入口地址:http://localhost:9999/redbag/statistics/
 */
