@@ -12,7 +12,8 @@ const (
 	//MONGO_URL_PLANTING = "10.21.6.39:27111" //test
 	// MONGO_URL_USER     = "10.21.6.39:27111" //test
 
-	MONGO_URL_PLANTING = "10.21.6.36:10011" //online
+	//MONGO_URL_PLANTING = "10.21.6.36:10011" //online
+	MONGO_URL_PLANTING = "10.80.22.148:10002" //online
 )
 
 var GlobalMgoSessionPlanting *mgo.Session
